@@ -1,0 +1,58 @@
+今有一需求，需要编译libpcap在ARM框架处理器下执行的版本，百度许久，网上的教程都是以libpcap1.0.0版本为基础，但我这边拿到的是libpcap1.6.2版本的拷贝，按照网上的做法已经不再适用。于是又Google许久（使用代（fan）理（qiang）），找到一些教程，虽不是直接针对arm-linux-gcc，但也基本相同，于是整理出一篇教程。
+
+一、arm-linux-gcc安装
+    该教程网上较多，这里仅列出简单步骤
+    1、下载arm-linux-gcc-4.4.3.tar.gz，（http://112.124.9.243/arm9net/mini2440/linux/arm-linux-gcc-4.4.3-20100728.tar.gz）直接百度文件名即可
+    2、任意解压缩至某位置，解压出的文件有如下目录结构：    ./opt/FriendlyARM/toolschain/4.4.3 (这里的opt不是系统根目录下的opt)，这里拷贝4.4.3这个文件夹至 /usr/local/arm/，arm目录需要实现自己创建。
+    3、将bin添加至系统环境，这里在全局环境中添加。终端中执行 sudo gedit /etc/profile  在最后一行添加 export PATH=$PATH:/usr/local/arm/4.4.3/bin，保存并退出
+    4、验证。执行source /etc/profile使刚添加的环境变量生效，执行 arm-linux-gcc -v，若有信息输出则成功验证。
+    5、若报错/.arm-none-linux-gnueabi-gcc: not found 出现这种情况的原因是：在64位Linux系统下无法兼容32位交叉编译器。则需安装32库 sudo apt-get install libc6-i386
+
+
+
+二、交叉编译libpcap1.6.2
+    1、下载libpcap-1.6.2.tar.gz，（http://www.tcpdump.org/release/） 百度名字应该就能下载到，并解压缩至任意目录
+    2、打开终端，进入目录libpcap-1.6.2，这里要使用arm-linux-gcc进行编译，所以首先执行 export CC=arm-linux-gcc，注意以下操作需在此终端下执行，若终端挂掉了，需要重新执行第2步。
+    3、配置。执行 ./configure --host=arm-linux --with-pcap=linux，几秒后执行结束。
+	（./configure --build=x86_64 --host=mipsel-openwrt-linux --target=mipsel-openwrt-linux --with-pcap=linux）
+    4、make 就好了。执行成功的话，libpcap-1.6.2目录下会生成libpcap.a文件，此文件就是我们进行编译时所需要的静态库
+
+三、libpcap包过滤示例
+
+    1、src host 192.168.1.177	
+只接收源ip地址是192.168.1.177的数据包
+
+
+
+    2、dst port 80
+	只接收tcp/udp的目的端口是80的数据包
+
+
+
+    3、not tcp		
+只接收不使用tcp协议的数据包
+
+
+
+    4、tcp[13] == 0x02 and (dst port 22 or dst port 23)
+		只接收SYN标志位置位且目标端口是22或23的数据包（tcp首部开始的第13个字节）
+
+
+
+    5、icmp[icmptype] == icmp-echoreply or icmp[icmptype] == icmp-echo
+	只接收icmp的ping请求和ping响应的数据包
+
+
+    6、
+ehter dst 00:e0:09:c1:0e:82	
+只接收以太网mac地址是00:e0:09:c1:0e:82的数据包
+
+
+
+    7、ip[8] == 5
+只接收ip的ttl=5的数据包（ip首部开始的第8个字节）
+
+part OpenWRT
+
+一、mipsel-openwrt-linux-gcc安装（Openwrt SDK 安装，配置环境变量）
+二、
